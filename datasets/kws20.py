@@ -444,17 +444,16 @@ class KWS:
 
         return audio2
 
-    def augment(self, audio, fs, verbose=False):
+    def augment(self, audio, fs, verbose=False, sample_no=0):
         """Augments audio by adding random noise, shift and stretch ratio.
         """
         random_noise_var_coeff = np.random.uniform(self.augmentation['noise_var']['min'],
                                                    self.augmentation['noise_var']['max'])
         random_shift_time = np.random.uniform(self.augmentation['shift']['min'],
                                               self.augmentation['shift']['max'])
-        random_stretch_coeff = np.random.uniform(self.augmentation['stretch']['min'],
-                                                 self.augmentation['stretch']['max'])
+        stretch_coeff = 0.9 + 0.2 * sample_no
 
-        sox_effects = [["speed", str(random_stretch_coeff)], ["rate", str(fs)]]
+        sox_effects = [["speed", str(stretch_coeff)], ["rate", str(fs)]]
         aug_audio, _ = torchaudio.sox_effects.apply_effects_tensor(
             torch.unsqueeze(torch.from_numpy(audio).float(), dim=0), fs, sox_effects)
         aug_audio = aug_audio.numpy().squeeze()
@@ -463,14 +462,14 @@ class KWS:
 
         if verbose:
             print(f'random_noise_var_coeff: {random_noise_var_coeff:.2f}\nrandom_shift_time: \
-                    {random_shift_time:.2f}\nrandom_stretch_coeff: {random_stretch_coeff:.2f}')
+                    {random_shift_time:.2f}\nstretch_coeff: {stretch_coeff:.2f}')
         return aug_audio
 
     def augment_multiple(self, audio, fs, n_augment, verbose=False):
         """Calls `augment` function for n_augment times for given audio data.
         Finally the original audio is added to have (n_augment+1) audio data.
         """
-        aug_audio = [self.augment(audio, fs, verbose=verbose) for i in range(n_augment)]
+        aug_audio = [self.augment(audio, fs, verbose=verbose, sample_no=i) for i in range(n_augment)]
         aug_audio.insert(0, audio)
         return aug_audio
 
