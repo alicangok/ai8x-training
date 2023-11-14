@@ -163,10 +163,6 @@ class KWS:
                     print('No key `shift` in input augmentation dictionary! '
                           'Using defaults: [Min:-0.1, Max: 0.1]')
                     self.augmentation['shift'] = {'min': -0.1, 'max': 0.1}
-                if 'stretch' not in augmentation:
-                    print('No key `stretch` in input augmentation dictionary! '
-                          'Using defaults: [Min: 0.8, Max: 1.3]')
-                    self.augmentation['stretch'] = {'min': 0.8, 'max': 1.3}
 
     def __download(self):
 
@@ -461,7 +457,7 @@ class KWS:
         """Adds zero mean Gaussian noise to image with specified variance.
         """
         coeff = noise_var_coeff * torch.mean(torch.abs(audio.type(torch.float)-128))
-        noise = (128 * coeff * torch.randn(len(audio))).type(torch.int16)
+        noise = (coeff * torch.randn(len(audio))).type(torch.int16)
         return (audio + noise).clip(0, 255).type(torch.uint8)
 
     @staticmethod
