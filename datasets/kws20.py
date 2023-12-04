@@ -631,6 +631,9 @@ class KWS:
                     record_pth = os.path.join(self.raw_folder, label, record_name)
                     record, fs = librosa.load(record_pth, offset=0, sr=None)
 
+                    # normalize dynamic range to [-1, +1]
+                    record = record / np.max(np.abs(record))
+
                     if d_typ != 1: # training and validation examples get speed augmentation
                         no_augmentations = self.augmentation['aug_num']
                     else: # test examples don't get speed augmentation
@@ -648,11 +651,6 @@ class KWS:
                                                mu=self.quantization['mu'])
                         data_shift_limits[sample_index] = shift_limits[local_id]
                         data_type[sample_index] = d_typ
-                        # apply static shift & noise augmentation for validation examples
-                        if d_typ == 2:
-                            data_in[sample_index] = \
-                                self.shift_and_noise_augment(data_in[sample_index],
-                                                             shift_limits[local_id])
                         sample_index += 1
 
                 dur = time.time() - time_s
@@ -677,6 +675,13 @@ class KWS:
             data_class_all = torch.from_numpy(data_class_all)
             data_type_all = torch.from_numpy(data_type_all)
             data_shift_limits_all = torch.from_numpy(data_shift_limits_all)
+
+            # apply static shift & noise augmentation for validation examples
+            for sample_index in range(data_in_all.shape[0]):
+                if data_type_all[sample_index] == 2:
+                    data_in_all[sample_index] = \
+                        self.shift_and_noise_augment(data_in_all[sample_index],
+                                                     data_shift_limits_all[sample_index])
 
             raw_dataset = (data_in_all, data_class_all, data_type_all, data_shift_limits_all)
             torch.save(raw_dataset, os.path.join(self.processed_folder, self.data_file))
