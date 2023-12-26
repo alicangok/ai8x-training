@@ -20,7 +20,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# 
 """
 Classes and functions used to create keyword spotting dataset.
 """
@@ -646,9 +646,9 @@ class KWS:
                     audio_seq_list, shift_limits = \
                         self.speed_augment_multiple(record, fs, exp_len, no_augmentations)
 
-                    for local_id in range(len(audio_seq_list)):
+                    for local_id, audio_seq in enumerate(audio_seq_list):
                         data_in[sample_index] = \
-                            KWS.quantize_audio(audio_seq_list[local_id],
+                            KWS.quantize_audio(audio_seq,
                                                num_bits=self.quantization['bits'],
                                                compand=self.quantization['compand'],
                                                mu=self.quantization['mu'])
