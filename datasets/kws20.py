@@ -430,7 +430,7 @@ class KWS:
 
         # apply dynamic shift and noise augmentation to training examples
         if data_type == 0:
-            inp = self.__shift_and_noise_augment(inp, shift_limits)
+            inp = self.shift_and_noise_augment(inp, shift_limits)
 
         # reshape to 2D
         inp = self.__reshape_audio(inp)
