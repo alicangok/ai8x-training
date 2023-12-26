@@ -174,19 +174,19 @@ class KWS:
 
         # download Speech Command
         filename = self.url_speechcommand.rpartition('/')[2]
-        #self.__download_and_extract_archive(self.url_speechcommand,
-        #                                    download_root=self.raw_folder,
-        #                                    filename=filename)
+        self.__download_and_extract_archive(self.url_speechcommand,
+                                            download_root=self.raw_folder,
+                                            filename=filename)
 
         # download LibriSpeech
         filename = self.url_librispeech.rpartition('/')[2]
-        #self.__download_and_extract_archive(self.url_librispeech,
-        #                                    download_root=self.librispeech_folder,
-        #                                    filename=filename)
+        self.__download_and_extract_archive(self.url_librispeech,
+                                            download_root=self.librispeech_folder,
+                                            filename=filename)
 
         # convert the LibriSpeech audio files to 1-sec 16KHz .wav, stored under raw/librispeech
-        #self.__resample_convert_wav(folder_in=self.librispeech_folder,
-        #                            folder_out=os.path.join(self.raw_folder, 'librispeech'))
+        self.__resample_convert_wav(folder_in=self.librispeech_folder,
+                                    folder_out=os.path.join(self.raw_folder, 'librispeech'))
 
         self.__gen_datasets()
 
@@ -408,11 +408,11 @@ class KWS:
     def __len__(self):
         return len(self.data)
 
-    def reshape_audio(self, audio, exp_len=16384, row_len=128):
+    def __reshape_audio(self, audio, row_len=128):
         # add overlap if necessary later on
-        return torch.transpose(audio.reshape((-1, row_len)),1,0)
+        return torch.transpose(audio.reshape((-1, row_len)), 1, 0)
 
-    def shift_and_noise_augment(self, audio, shift_limits):
+    def __shift_and_noise_augment(self, audio, shift_limits):
         """Augments audio by adding random shift and noise.
         """
         random_noise_var_coeff = np.random.uniform(self.augmentation['noise_var']['min'],
@@ -430,10 +430,10 @@ class KWS:
 
         # apply dynamic shift and noise augmentation to training examples
         if data_type == 0:
-            inp = self.shift_and_noise_augment(inp, shift_limits)
+            inp = self.__shift_and_noise_augment(inp, shift_limits)
 
         # reshape to 2D
-        inp = self.reshape_audio(inp)
+        inp = self.__reshape_audio(inp)
 
         inp = inp.type(torch.FloatTensor)
 
@@ -511,13 +511,16 @@ class KWS:
         return np.uint8(q_data)
 
     def energy_detector(self, audio, fs):
-        # dummy, to be implemented (or not)
-        # currently, it returns end points compatible with augmentation['shift'] values
+        """Future: May implement a method to detect the beginning & end of voice activity in audio.
+        Currently, it returns end points compatible with augmentation['shift'] values
+        """
         return int(-self.augmentation['shift']['min'] * fs), \
-               int(len(audio) - self.augmentation['shift']['max'] * fs)
+            int(len(audio) - self.augmentation['shift']['max'] * fs)
 
     def speed_augment(self, audio, fs, sample_no=0):
-        # the generated coefficient follows 0.9, 1.1, 0.95, 1.05 ... pattern
+        """Augments audio by randomly changing the speed of the audio.
+        The generated coefficient follows 0.9, 1.1, 0.95, 1.05... pattern
+        """
         speed_multiplier = 1.0 + 0.2 * (sample_no % 2 - 0.5) / (1 + sample_no // 2)
 
         sox_effects = [["speed", str(speed_multiplier)], ["rate", str(fs)]]
@@ -634,11 +637,11 @@ class KWS:
                     # normalize dynamic range to [-1, +1]
                     record = record / np.max(np.abs(record))
 
-                    if d_typ != 1: # training and validation examples get speed augmentation
+                    if d_typ != 1:  # training and validation examples get speed augmentation
                         no_augmentations = self.augmentation['aug_num']
-                    else: # test examples don't get speed augmentation
+                    else:  # test examples don't get speed augmentation
                         no_augmentations = 0
-                    
+
                     # apply speed augmentations and calculate shift limits
                     audio_seq_list, shift_limits = \
                         self.speed_augment_multiple(record, fs, exp_len, no_augmentations)
@@ -688,6 +691,7 @@ class KWS:
 
         print('Dataset created.')
         print(f'Training: {train_count}, Validation: {valid_count}, Test: {test_count}')
+
 
 class KWS_20(KWS):
     """
