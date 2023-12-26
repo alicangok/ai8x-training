@@ -412,7 +412,7 @@ class KWS:
         # add overlap if necessary later on
         return torch.transpose(audio.reshape((-1, row_len)), 1, 0)
 
-    def __shift_and_noise_augment(self, audio, shift_limits):
+    def shift_and_noise_augment(self, audio, shift_limits):
         """Augments audio by adding random shift and noise.
         """
         random_noise_var_coeff = np.random.uniform(self.augmentation['noise_var']['min'],
